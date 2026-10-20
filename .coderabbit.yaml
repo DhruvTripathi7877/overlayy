@@ -1,0 +1,157 @@
+# CodeRabbit configuration
+# Schema: https://docs.coderabbit.ai/reference/configuration
+#
+# Free forever on public repositories - no API key, CodeRabbit runs the models.
+# Install the GitHub App, then this file takes effect on the next PR.
+#
+# NOTE on plans: custom pre-merge checks (reviews.pre_merge_checks.custom_checks)
+# require a paid Team plan, so the project-specific rules live in
+# path_instructions below instead. Those work on the free OSS tier.
+
+language: "en-US"
+
+# The maintainer is a solo developer deliberately learning this codebase as it
+# is built. Feedback that only says what to change teaches nothing.
+tone_instructions: >-
+  The maintainer is a solo developer deliberately learning this codebase. For
+  every finding, name the underlying principle and say why it matters here, not
+  only what to change. Prefer one well-explained finding over several shallow ones.
+
+reviews:
+  # More feedback, even if it feels nitpicky. This is a learning project;
+  # "quiet" would hide exactly the things worth learning.
+  profile: "assertive"
+
+  # Branches are opened as DRAFTS as soon as they exist, so review must run on
+  # drafts or nothing gets reviewed until the very end. Default is false.
+  auto_review:
+    enabled: true
+    drafts: true
+    auto_incremental_review: true
+    base_branches:
+      - "^main$"
+
+  # Solo repo: GitHub forbids approving your own PR, so let CodeRabbit's
+  # `@coderabbitai approve` remain usable by the author.
+  allow_author_approval: true
+  request_changes_workflow: false
+
+  # Walkthrough noise off. Keep the substance.
+  poem: false
+  in_progress_fortune: false
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  suggested_reviewers: false
+  suggested_labels: false
+
+  path_filters:
+    - "!**/*.png"
+    - "!**/*.dmg"
+    - "!**/*.lock"
+    - "!**/Package.resolved"
+    - "!**/uv.lock"
+    - "!docs/internal/**"
+
+  # --------------------------------------------------------------------------
+  # The rules that actually matter in this repo. Generic advice is easy; these
+  # are the project invariants a general-purpose reviewer cannot infer.
+  # --------------------------------------------------------------------------
+  path_instructions:
+    - path: "backend/**"
+      instructions: |
+        - docs/F0_PROTOCOL.md is a frozen wire and domain contract. Every wire
+          field, WebSocket message type, error code, and database column in this
+          diff MUST be defined there. Flag anything invented as BLOCKING and
+          name the F0 section it should have come from. Also flag the reverse:
+          a contract field defined in F0 but silently unimplemented.
+        - Latency budget is sub-2 seconds from turn end to first token. Flag
+          serial awaits that could be concurrent, per-request work that could
+          be done once, and any hot-path work not instrumented per F0 section 12
+          (t_turn_end -> t_first_token -> t_done).
+        - Flag resource leaks: Deepgram streams, WebSocket connections, and
+          database connections that are opened without a guaranteed close on
+          every error path.
+        - Flag unbounded growth: transcript turn rows, the rolling summary, and
+          reconnect buffers must all have a bound.
+        - Rejected or deferred scope, flag any reappearance including stubs:
+          RAG, embeddings, vector search, background screenshots, splitting the
+          single backend service, local Whisper. See docs/DECISIONS.md.
+
+    - path: "client/**"
+      instructions: |
+        - docs/F0_PROTOCOL.md is a frozen contract. Every wire field and message
+          type must be defined there; flag invented ones as BLOCKING.
+        - The client is deliberately thin. All intelligence is server-side
+          (DECISIONS D-001). Flag any LLM, STT, or retrieval logic here, and
+          flag any API key embedded in the binary.
+        - The overlay must stay excluded from screen capture
+          (sharingType = .none). Flag anything that could break that.
+        - Audio capture is gated by the macOS Screen Recording permission. Flag
+          any capture path that does not handle the denied or revoked state.
+        - Flag blocking work on the main actor and any token-streaming path
+          that is not incremental.
+
+    - path: "**/*.sql"
+      instructions: |
+        - Schema must match docs/F0_PROTOCOL.md section 10 exactly. Flag any
+          column, table, index, or constraint not defined there as BLOCKING.
+        - Turns are row-based and append-only (DECISIONS D-004). Flag any
+          design that rewrites or replaces a JSON blob, and flag any migration
+          that mutates existing rows rather than adding new ones.
+
+    - path: "docs/**"
+      instructions: |
+        - A change to docs/F0_PROTOCOL.md must bump the version and add a
+          changelog entry in section 14. Flag a contract change without both.
+        - docs/DECISIONS.md is append-only. Flag any edit or deletion of an
+          existing entry; the correct form is a new entry that says
+          "supersedes D-0xx".
+        - Flag any decision recorded without an "Alternatives rejected" line.
+
+    - path: "**/*"
+      instructions: |
+        - PRIVACY, highest priority: this app captures microphone and system
+          audio from live calls. Flag ANY audio file, transcript, caption file,
+          session dump, or latency telemetry payload entering the repository.
+          A recording of a real call contains other people's voices and is
+          permanent once pushed. Flag `git add -f` of anything matching
+          .gitignore section 1 as BLOCKING.
+        - Flag any secret, API key, certificate, or Apple signing material
+          (.p8, .p12, .mobileprovision).
+
+  tools:
+    # Relevant to this stack
+    ruff:
+      enabled: true
+    swiftlint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    markdownlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    ast-grep:
+      enabled: true
+
+    # Not in this stack - disabled so the config states the truth
+    languagetool:
+      enabled: false
+    biome:
+      enabled: false
+    eslint:
+      enabled: false
+    detekt:
+      enabled: false
+    golangci-lint:
+      enabled: false
+    phpstan:
+      enabled: false
+    phpmd:
+      enabled: false
+    phpcs:
+      enabled: false
+    fbinfer:
+      enabled: false

@@ -1,0 +1,259 @@
+# ============================================================================
+# 1. PRIVACY - AUDIO AND TRANSCRIPTS. READ THIS BEFORE FORCE-ADDING ANYTHING.
+# ============================================================================
+# Overlayy captures microphone and system audio from live calls. Any recording
+# in this repo may contain other people's voices, and once pushed to a public
+# remote it is permanent - a force-push does not remove it from forks, clones,
+# or GitHub's cached views.
+#
+# These rules are deliberately broad. If a test needs audio:
+#   - PREFER generating a synthetic tone in test code (no binary in git), or
+#   - fetch a public dataset via a script into fixtures/audio/ (gitignored), or
+#   - as a last resort, `git add -f` a file you are CERTAIN contains no real
+#     human speech, and say why in the commit message.
+#
+# Never `git add -f` anything matching this section without re-listening to it.
+
+# raw and encoded audio
+*.wav
+*.wave
+*.aif
+*.aiff
+*.aifc
+*.caf
+*.pcm
+*.raw
+*.mp3
+*.m4a
+*.mp4
+*.aac
+*.ogg
+*.opus
+*.flac
+*.wma
+*.amr
+
+# capture-harness output (C3 dump-to-WAV) and VAD fixtures (C4)
+recordings/
+fixtures/audio/
+audio/
+captures/
+*.dump
+
+# transcripts and transcript-adjacent data - derived from real speech
+*.vtt
+*.srt
+*.sbv
+*.dfxp
+transcripts/
+*.transcript.*
+*.srt.json
+
+# session dumps, prompt/response payloads, and latency telemetry (F0 section 12)
+# can all contain verbatim conversation content
+sessions/
+telemetry/
+*.jsonl
+*.ndjson
+*.har
+
+# local LLM/STT provider caches and request recordings
+.cache/
+.recordings/
+*.betamax
+
+# --- the ONE exception -----------------------------------------------------
+# Synthetic fixtures only: generated tones, hand-written fake transcripts that
+# were never spoken by anyone, constructed conversation windows for B4.
+# The path name is the safeguard - if you are about to put something here, the
+# word "synthetic" should make you stop and check.
+#
+# Better still: build fixtures in test code (Python dicts, Swift structs) rather
+# than as data files. Then there is nothing to leak and nothing to police.
+#
+# Anything real - a recording, a real transcript, a real session dump - has no
+# exception and no path into this repo.
+!tests/fixtures/synthetic/
+!tests/fixtures/synthetic/**
+
+
+# ============================================================================
+# 2. SECRETS, KEYS, AND APPLE SIGNING MATERIAL
+# ============================================================================
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p8
+*.p12
+*.cer
+*.crt
+*.der
+AuthKey_*.p8
+*.mobileprovision
+*.provisionprofile
+secrets.json
+secrets.yaml
+secrets.yml
+secrets.toml
+secrets.env
+credentials.json
+service-account*.json
+
+# fastlane / notarization / App Store Connect
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+*.ipa
+
+# provider keys sometimes dropped by tooling
+.deepgram*
+.openai*
+.anthropic*
+
+
+# ============================================================================
+# 3. LOCAL RUNTIME DATA, LOGS, DATABASE
+# ============================================================================
+*.log
+logs/
+tmp/
+temp/
+_local/
+scratch/
+
+# postgres / local db
+pgdata/
+*.sqlite
+*.sqlite3
+*.db
+*.dump.sql
+pg_dump_*
+
+# python virtualenvs and caches
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+*.egg-info/
+.eggs/
+pip-log.txt
+uv-build/
+
+
+# ============================================================================
+# 4. SWIFT / XCODE / MACOS PACKAGING
+# ============================================================================
+.build/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+Timeline.xctimeline
+playground.xcworkspace
+Pods/
+Carthage/Build/
+
+# distribution artifacts - built by CI, never committed (X2)
+*.dmg
+*.pkg
+*.app
+*.zip
+build/
+dist/
+*.xcarchive
+
+
+# ============================================================================
+# 5. OS AND EDITOR NOISE
+# ============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+.fleet/
+.zed/
+
+
+# ============================================================================
+# 6. PRIVATE WORKING AREA - the only docs path that is ignored
+# ============================================================================
+# Use this for anything you would not want on a public remote: product
+# strategy, competitor notes, personal retros, half-formed ideas.
+# Everything else under docs/ IS committed and MUST stay committed -
+# docs/DECISIONS.md is append-only precisely so git history preserves it.
+docs/internal/
+
+
+# ============================================================================
+# DELIBERATELY *NOT* IGNORED - do not add these
+# ============================================================================
+#   AGENTS.md                      agent entry point; must be versioned
+#   docs/STATUS.md                 living state; fresh sessions depend on it
+#   docs/DECISIONS.md              append-only log; history IS the artifact
+#   docs/F0_PROTOCOL.md            versioned contract with a changelog
+#   docs/LEARNINGS.md              learning log; prediction accuracy needs history
+#   docs/components/*-BRIEF.md     pre-design predictions; the learning baseline
+#   .opencode/                     tutor/reviewer agents and commands are part
+#                                  of the system, not personal tool config
+#   overlayy_roadmap*.md           design rationale referenced by DECISIONS
+#   overlayy.png                   UI mock referenced by D-011
+#   Package.resolved               Swift dependency lockfile - commit it
+#   uv.lock / requirements.txt     Python dependency lockfiles - commit them
+#   .python-version                pins the 3.12 runtime
+#   .github/                       PR template and CI workflows
